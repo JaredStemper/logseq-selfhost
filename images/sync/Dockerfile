@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 FROM debian:trixie-slim@sha256:020c0d20b9880058cbe785a9db107156c3c75c2ac944a6aa7ab59f2add76a7bd AS build
-ARG LOGSEQ_REF=master
+ARG LOGSEQ_REF=c5e8cdaf1dcf51f4d9f823dacdbc00c68af1fc72
 ARG MISE_VERSION=v2026.11.7
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -26,7 +26,8 @@ WORKDIR /src
 RUN git init . \
   && git remote add origin https://github.com/logseq/logseq.git \
   && git fetch --depth 1 origin "${LOGSEQ_REF}" \
-  && git checkout --detach FETCH_HEAD
+  && git checkout --detach FETCH_HEAD \
+  && test "$(git rev-parse HEAD)" = "${LOGSEQ_REF}"
 
 COPY mise.toml /src/mise.toml
 RUN mise trust /src/mise.toml
@@ -52,11 +53,16 @@ RUN mkdir -p /tmp/runtime-data
 FROM gcr.io/distroless/nodejs24-debian12:nonroot@sha256:14d42e2511532589a7c7e01a753667a74fcc96266e137e8125006b87b0c32d0a
 WORKDIR /app
 LABEL org.opencontainers.image.description="Self-hosted Logseq Sync Server image (db-sync node adapter)"
+LABEL org.opencontainers.image.logseq.revision="c5e8cdaf1dcf51f4d9f823dacdbc00c68af1fc72"
 
 COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/package.json /app/package.json
 COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/node_modules /app/node_modules
 COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/worker /app/worker
+COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/deps.edn /app/source-deps.edn
+COPY --chown=nonroot:nonroot --from=build /src/deps/db-sync/src/logseq/db_sync/storage.cljs /app/source-storage.cljs
+COPY --chown=nonroot:nonroot --from=build /src/deps/db/src/logseq/db.cljs /app/source-db.cljs
+COPY --chown=nonroot:nonroot --from=build /src/LICENSE.md /app/LICENSE.md
 COPY --chown=nonroot:nonroot --from=build /tmp/runtime-data /app/data
 
 ENV DB_SYNC_PORT=8787

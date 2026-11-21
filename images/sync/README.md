@@ -8,6 +8,8 @@
 
 This image packages Logseq `deps/db-sync` node adapter for self-hosting.
 
+This fork's sync build is pinned to the complete Logseq PR [#13911](https://github.com/logseq/logseq/pull/13911) commit [`c5e8cdaf1dcf51f4d9f823dacdbc00c68af1fc72`](https://github.com/logseq/logseq/commit/c5e8cdaf1dcf51f4d9f823dacdbc00c68af1fc72). The recipe verifies checkout identity and includes the license and storage source provenance. Production consumes the qualified image digest from GHCR, never a moving branch or `latest`. Desktop/web clients and DataScript PR #2 are not rebuilt by this change.
+
 Use [`images/sync-worker`](../sync-worker/README.md) instead when semantic REST or MCP access is required. The two images use incompatible storage and cannot share a data volume.
 
 ## Upstream URLs
